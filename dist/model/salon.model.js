@@ -33,26 +33,19 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Salon = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const salonSchema = new mongoose_1.Schema({
     name: { type: String, required: true, unique: true },
     address: { type: String, required: true },
     area: { type: String, required: true },
-    location: { coordinates: [], default: [] },
+    image: { type: String },
     phone: { type: String, required: true, unique: true },
-    opening_hours: { type: Number, required: true },
-    closing_hours: { type: Number, required: true },
     owner: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
     rating: { type: Number, default: 0 },
     services: [{
             _id: { type: mongoose_1.Schema.Types.ObjectId, ref: "Service" },
             name: { type: String, required: true },
-            price: { type: Number, required: true },
-            opening_hours: { type: Number, required: true },
-            closing_hours: { type: Number, required: true },
-            duration: { type: Number, required: true }, // in minutes
-            staff_id: { type: mongoose_1.default.Schema.Types.ObjectId, ref: "User", required: true }
         }],
 });
-const Salon = mongoose_1.default.model("Salon", salonSchema);
-exports.default = Salon;
+exports.Salon = mongoose_1.default.model("Salon", salonSchema);

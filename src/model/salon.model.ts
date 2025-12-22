@@ -10,11 +10,11 @@ export interface ISalon{
   
     owner:Schema.Types.ObjectId;
     rating:number;
-    services:[{
-    _id: Schema.Types.ObjectId;
+    services:{
+    _id: string ;
     name:string;
 
-}];
+}[];
 
 }
 

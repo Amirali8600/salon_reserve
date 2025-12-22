@@ -2,7 +2,6 @@ import { UserQuery } from "../../repositories/user.query";
 import { Request,Response,NextFunction,RequestHandler   } from "express";
 import { AppointmentService } from "../../service/appointment .service";
 import { AppointmentQuery } from "../../repositories/appointment .query";
-import { SalonQuery } from "../../repositories/salon.query";
 import { Schema } from "mongoose";
 export class AppointmentController{
     private appointmentService:AppointmentService=new AppointmentService();

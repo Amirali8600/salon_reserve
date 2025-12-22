@@ -7,13 +7,13 @@ exports.jwtMiddleware = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const jwtMiddleware = (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
+        const authHeader = req.headers.auth;
         if (!authHeader) {
             const error = new Error("توکن احراز هویت ارسال نشده است");
             error.statusCode = 401;
             throw error;
         }
-        const token = authHeader.split(" ")[1];
+        const token = authHeader.split(":")[1];
         if (!token) {
             const error = new Error("توکن احراز هویت معتبر نیست");
             error.statusCode = 401;
@@ -21,6 +21,7 @@ const jwtMiddleware = (req, res, next) => {
         }
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         req.userId = { userId: decoded.userId, phone: decoded.phone, role: decoded.role };
+        console.log(req.userId);
         next();
     }
     catch (error) {

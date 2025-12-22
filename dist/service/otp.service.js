@@ -8,31 +8,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OtpService = void 0;
-const axios_1 = __importDefault(require("axios"));
 const otp_query_1 = require("../repositories/otp.query");
+const otp_utils_1 = require("../utils/otp.utils");
 const OTP_API_URL = process.env.OTP_API_URL;
-const sendOtp = (to, args) => __awaiter(void 0, void 0, void 0, function* () {
-    const data = {
-        to,
-        args,
-        bodyId: Number(process.env.bodyId)
-    };
-    try {
-        console.log(args);
-        const response = yield axios_1.default.post("https://console.melipayamak.com/api/send/shared/0bec87a729d24cb7b5f058fdf3721c91", data, { headers: {
-                'Content-Type': 'application/json',
-            } });
-        return response.data;
-    }
-    catch (error) {
-        throw error;
-    }
-});
 class OtpService {
     constructor() {
         this.otpQuery = new otp_query_1.OtpQuery();
@@ -53,7 +33,7 @@ class OtpService {
                         error.statusCode = 400;
                         throw error;
                     }
-                    yield sendOtp(phone, [otpCode]);
+                    yield (0, otp_utils_1.sendOtp)(phone, [otpCode]);
                     existingOtp.code = otpCode;
                     existingOtp.createdAt = new Date();
                     existingOtp.attemptCount = existingOtp.attemptCount + 1;
@@ -63,7 +43,7 @@ class OtpService {
                     return { message: "کد تایید با موفقیت ارسال شد", updatedOtp };
                 }
                 else {
-                    yield sendOtp(phone, [otpCode]);
+                    yield (0, otp_utils_1.sendOtp)(phone, [otpCode]);
                     const newOtp = yield this.otpQuery.create({
                         phone,
                         code: otpCode,

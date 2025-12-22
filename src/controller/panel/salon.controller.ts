@@ -2,18 +2,21 @@ import { Request,Response,NextFunction,RequestHandler   } from "express";
 import { SalonService } from "../../service/salon.service";
 import { StorageManageUtils } from "../../utils/storagemanage.utils";
 import { ServiceQuery } from "../../repositories/service.query";
-import { Schema } from "mongoose";
+import { Schema, Types } from "mongoose";
 import { UserQuery } from "../../repositories/user.query";
 import { ShiftQuery } from "../../repositories/shift.query";
+import { log } from "console";
 export class SalonController{
     private salonService:SalonService=new SalonService();
     createSalon:RequestHandler = async (req:Request,res:Response,next:NextFunction) => {
         try{
-            if(req.user.role!=="admin"){
-                const error:Error=new Error("شما دسترسی لازم برای ایجاد سالن را ندارید");
-                error.statusCode=403;
-                throw error;
-            }
+            // if(!req.userId.role){
+            //     const error:Error=new Error("شما دسترسی لازم برای ایجاد سالن را ندارید");
+            //     error.statusCode=403;
+            //     throw error;
+            // }
+            console.log(req.file);
+            
             if(!req.file){
                 const error:Error=new Error("تصویر سالن الزامی است");
                 error.statusCode=400;
@@ -21,20 +24,36 @@ export class SalonController{
             }
          const image=req.file.path;
             
+            const j='["item1", "item2", "item3"]';
+            const {name, address, area, phone, rating, services_id}=req.body;
+            const admin=req.userId.userId;
+            const service_array=JSON.parse(services_id);
 
-            const {name, address, area, phone, opening_hours, closing_hours, admin, rating, services}=req.body;
-            let ServiceRecords:[{_id:Schema.Types.ObjectId; name:string;}]
-            for(let i=0;i<services.length;i++){
-                const serviceRecord=await new ServiceQuery().findOne({_id:services[i]});
-                ServiceRecords.push({_id:serviceRecord._id,name:serviceRecord.name});
+            log(service_array.length);
+            let ServiceRecords: { _id: string; name: string; }[]=[] ;
+            for(let i=0;i<3;i++){
+                const serviceRecord=await new ServiceQuery().findOne({_id:service_array[i]});
+                log(serviceRecord);
+                if(!serviceRecord){
+                  
+                    const error:Error=new Error("خدمات انتخاب شده معتبر نیستند");
+                    error.statusCode=400;
+                    throw error;
+                }
+            
+                ServiceRecords.push({_id:(service_array[i]),name:serviceRecord.name});
+           
             }
-            const result=await this.salonService.createSalon({name, address, image, area, phone, opening_hours, closing_hours, owner:admin, rating, services:ServiceRecords
+        
+            const result=await this.salonService.createSalon({name, address, image, area, phone, owner:admin, rating, services: ServiceRecords
             });
+
             if(!result){
                 const error:Error=new Error("خطایی در ایجاد سالن رخ داده است");
                 error.statusCode=500;
                 throw error;
             }
+            res.status(201).json(result.message);
             const change=await new UserQuery().update({_id:admin},{role:"admin"});
             if(!change){
                 const error:Error=new Error("خطایی در به روز رسانی نقش کاربر رخ داده است");
@@ -47,29 +66,56 @@ export class SalonController{
     }
     updateSalon:RequestHandler = async (req:Request,res:Response,next:NextFunction) => {
         try{
-            const{salonId}=req.body;
+            if(req.userId.role!=="admin"){
+                const error:Error=new Error("شما دسترسی لازم برای این عملیات را ندارید");
+                error.statusCode=403;
+                throw error;
+            }
+            const{salonId,name,address, area, phone, rating, services_id}=req.body;
             const findSalon=await this.salonService.getSalonById(salonId);
+        //    
             if(!findSalon){
                 const error:Error=new Error("سالن مورد نظر یافت نشد");
                 error.statusCode=404;
                 throw error;
             }
-            const updateData=req.body;
-            delete updateData.salonId;
-           if(updateData.phone){
-            const existingSalon=await this.salonService.getAllSalons();
-            if(existingSalon.some((salon:any)=>salon.phone===updateData.phone && salon._id.toString()!==salonId)){
-                const error:Error=new Error("این شماره تلفن قبلا ثبت شده است");
+        let updateData:Partial<{name?:string; address?:string; image?:string; area?:string; phone?:string; owner?:Schema.Types.ObjectId; rating?:number; services?:{_id:string; name:string;}[]}>={};
+        if(name) updateData.name=name;
+        if(address) updateData.address=address;
+        if(area) updateData.area=area;
+        if(rating) updateData.rating=rating;
+       if(phone) updateData.phone=phone;
+       if(services_id){
+        const service_array=JSON.parse(services_id);
+        let ServiceRecords: { _id: string; name: string; }[]=[] ;
+        for(let i=0;i<service_array.length;i++){
+            const serviceRecord=await new ServiceQuery().findOne({_id:service_array[i]});
+            if(!serviceRecord){
+                const error:Error=new Error("خدمات انتخاب شده معتبر نیستند");
                 error.statusCode=400;
                 throw error;
-            }   
-              }
-              if(updateData.image!==findSalon.image){
+            }
+            ServiceRecords.push({_id:(service_array[i]),name:serviceRecord.name});
+        }
+        updateData.services=ServiceRecords;
+       }
+        if(req.file){
+            const imagePath=req.file.path;
+            updateData.image=imagePath;
+            if(findSalon.image!==imagePath){
                 await StorageManageUtils.deleteFile(findSalon.image);
+            }
+        }   
+          
 
-              }
             const result=await this.salonService.updateSalon(salonId,updateData);
-            res.status(200).json(result);
+          
+            res.status(200).json(result.message);
+            if(!result){
+                const error:Error=new Error("خطایی در به روز رسانی سالن رخ داده است");
+                error.statusCode=500;
+                throw error;
+            }
         }catch(error){
             next(error);
         }
@@ -101,7 +147,7 @@ endTime,service,exceptionDates
                 }
                 serviceDetails.push({service_id:serviceRecord._id,duration:service[i].duration,price:service[i].price});
             }
-            let exceptionDates_details:[{date:Date; startTime:Date; endTime:Date; status:string;}] ;
+            let exceptionDates_details:[{date:Date; startTime:string; endTime:string; status:string;}] ;
             for(let j=0;j<exceptionDates.length;j++){
                 if(exceptionDates[j].date<new Date()){
                     const error:Error=new Error("تاریخ های استثنا نمی توانند در گذشته باشند");

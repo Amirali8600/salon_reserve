@@ -33,16 +33,24 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Appointment = void 0;
+exports.Shift = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const Appointment_Schema = new mongoose_1.default.Schema({
-    salon: { type: mongoose_1.Schema.Types.ObjectId, ref: "Salon", required: true },
-    service: { type: mongoose_1.Schema.Types.ObjectId, ref: "Service", required: true },
-    user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
-    date: { type: Date, required: true },
-    appointment_start_time: { type: String, required: true },
-    appointment_end_time: { type: String, required: true },
+const ShiftSchema = new mongoose_1.default.Schema({
     staff_id: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
-    status: { type: String, required: true, default: "booked" }, // booked,completed,cancelled
+    salonId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Salon", required: true },
+    startTime: { type: String, required: true },
+    endTime: { type: String, required: true },
+    service: [{
+            service_id: { type: mongoose_1.Schema.Types.ObjectId, ref: "Service", required: true },
+            duration: { type: Number, required: true }, // in minutes
+            price: { type: Number, required: true },
+        }],
+    exceptionDates: [{
+            date: { type: Date, required: true },
+            startTime: { type: String, required: true },
+            endTime: { type: String, required: true },
+            status: { type: String, required: true, default: "active" }, // cancelled,active
+        }],
+    status: { type: String, required: true, default: "active" }, // active, cancelled,
 }, { timestamps: true });
-exports.Appointment = mongoose_1.default.model("papointment", Appointment_Schema);
+exports.Shift = mongoose_1.default.model("Shift", ShiftSchema);

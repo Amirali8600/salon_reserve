@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.salonRouter = void 0;
+const salon_controller_1 = require("../../controller/panel/salon.controller");
+const express_1 = require("express");
+const upload_midleware_1 = require("../../midleware/upload.midleware");
+const jwt_midleware_1 = require("../../midleware/jwt.midleware");
+exports.salonRouter = (0, express_1.Router)();
+const salonController = new salon_controller_1.SalonController();
+exports.salonRouter.post("/create-salon", jwt_midleware_1.jwtMiddleware, upload_midleware_1.upload.single("image"), salonController.createSalon);
+exports.salonRouter.post("/update-salon", jwt_midleware_1.jwtMiddleware, upload_midleware_1.upload.single("image"), salonController.updateSalon);

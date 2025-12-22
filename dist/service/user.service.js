@@ -43,7 +43,7 @@ class UserService {
                 role: data.role || "user",
             });
             const deleteOtp = yield new otp_query_1.OtpQuery().delete({ _id: OtpRecord._id });
-            return newUser;
+            return { message: "کاربر با موفقیت ثبت شد", newUser: newUser };
         });
     }
     loginUser(phone, password) {
