@@ -11,21 +11,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppointmentController = void 0;
 const appointment__service_1 = require("../../service/appointment .service");
-const appointment__query_1 = require("../../repositories/appointment .query");
 class AppointmentController {
     constructor() {
         this.appointmentService = new appointment__service_1.AppointmentService();
         this.createAppointment = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
             try {
-                const { salon, service, user, staff_id, date, appointment_start_time, appointment_end_time, status } = req.body;
-                const findappointment = yield new appointment__query_1.AppointmentQuery().findOne({ salon, service, staff_id, date, appointment_start_time, appointment_end_time });
-                if (findappointment) {
-                    const error = new Error("این نوبت قبلا رزرو شده است");
-                    error.statusCode = 400;
-                    throw error;
-                }
-                const newAppointment = yield this.appointmentService.createAppointment({ salon, service, user, staff_id, date, appointment_start_time, appointment_end_time, status });
+                const { salon, service, user, shift_id, date, appointment_start_time, appointment_end_time, status } = req.body;
+                const newAppointment = yield this.appointmentService.createAppointment({ salon, service, user: req.userId.userId, shift_id, date, appointment_start_time, appointment_end_time, status });
                 res.status(201).json({ message: newAppointment.message, appointment: newAppointment.newAppointment });
+            }
+            catch (error) {
+                next(error);
+            }
+        });
+        this.showAppointment = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { salon, service, date } = req.body;
+                const appointments = yield this.appointmentService.showUnbookedAppointments({ salon, service, date });
+                res.status(200).json({ appointments });
             }
             catch (error) {
                 next(error);

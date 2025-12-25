@@ -11,9 +11,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SalonService = void 0;
 const salon_query_1 = require("../repositories/salon_query");
+const appointment__query_1 = require("../repositories/appointment .query");
 class SalonService {
     constructor() {
         this.salonQuery = new salon_query_1.SalonQuery();
+        this.appointmentQuery = new appointment__query_1.AppointmentQuery();
     }
     createSalon(data) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -49,6 +51,13 @@ class SalonService {
             }
             const updateResult = yield this.salonQuery.update({ _id: salonId }, updateData);
             return { message: "سالن با موفقیت به روز رسانی شد", updateResult };
+        });
+    }
+    ShowAppointments(data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const findSalonAppointments = yield this.appointmentQuery.find({ salon: data.salonId, service: data.serviceId, date: data.date });
+            const find = findSalonAppointments.toString();
+            return { message: "لیست نوبت های  تاریخ ", findSalonAppointments };
         });
     }
     deleteSalon(salonId) {

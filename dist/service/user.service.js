@@ -17,8 +17,10 @@ const user_query_1 = require("../repositories/user.query");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const otp_query_1 = require("../repositories/otp.query");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const appointment__query_1 = require("../repositories/appointment .query");
 class UserService {
     constructor() {
+        this.AppointmentQuery = new appointment__query_1.AppointmentQuery();
         this.userQuery = new user_query_1.UserQuery();
     }
     registerUser(data) {
@@ -67,6 +69,28 @@ class UserService {
                     const token = jsonwebtoken_1.default.sign({ userId: existingUser._id, phone: existingUser.phone, role: existingUser.role }, process.env.JWT_SECRET, { expiresIn: "1y" });
                     return { message: "ورود با موفقیت انجام شد", token };
             }
+        });
+    }
+    userAccount(phone) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const user = yield this.userQuery.findbyPhone(phone);
+            if (!user) {
+                const error = new Error("کاربری با این شماره تلفن یافت نشد");
+                error.statusCode = 404;
+                throw error;
+            }
+            return { user };
+        });
+    }
+    showUserAppointments(userId) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const appointments = yield this.AppointmentQuery.find({ userId: userId, status: "booked" });
+            if (!appointments) {
+                const error = new Error("هیچ رزروی یافت نشد");
+                error.statusCode = 404;
+                throw error;
+            }
+            return { appointments };
         });
     }
 }

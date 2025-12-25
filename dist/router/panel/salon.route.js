@@ -9,3 +9,6 @@ exports.salonRouter = (0, express_1.Router)();
 const salonController = new salon_controller_1.SalonController();
 exports.salonRouter.post("/create-salon", jwt_midleware_1.jwtMiddleware, upload_midleware_1.upload.single("image"), salonController.createSalon);
 exports.salonRouter.post("/update-salon", jwt_midleware_1.jwtMiddleware, upload_midleware_1.upload.single("image"), salonController.updateSalon);
+exports.salonRouter.post("/add-shift", jwt_midleware_1.jwtMiddleware, salonController.addStaff);
+exports.salonRouter.post("/update-shift", jwt_midleware_1.jwtMiddleware, salonController.updateStaffShift);
+exports.salonRouter.post("/show-appointments", jwt_midleware_1.jwtMiddleware, salonController.ShowAppointments);

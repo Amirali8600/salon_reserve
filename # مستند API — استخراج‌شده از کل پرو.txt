@@ -1,0 +1,328 @@
+# مستند API — استخراج‌شده از کل پروژه
+
+این مستند بر اساس فایل‌های `src/router` و کنترلرهای مرتبط استخراج شده و مسیرها، پارامترها و نیازمندی‌های هر endpoint را شرح می‌دهد.
+
+**توجه:** در پروژه بسیاری از مسیرها با متد `POST` تعریف شده‌اند. پیش‌وند روت‌ها در زمان راه‌اندازی اپ قابل تنظیم است؛ در این مستند مسیرها دقیقاً همان‌هایی هستند که در فایل‌های `router` ثبت شده‌اند (مثلاً `/user/send-otp`).
+
+---
+
+**احراز هویت**
+- از `jwtMiddleware` برای مسیرهای محافظت‌شده استفاده می‌شود (`src/midleware/jwt.midleware.ts`).
+- هدر مورد استفاده: `Authorization: Bearer <token>`
+
+---
+
+**مسیرهای Web**
+
+- POST `/user/send-otp`
+  - توضیح: تولید و ارسال کد یک‌بار مصرف (OTP)
+  - Body: `{ phone: string }`
+  - Response: پیام موفقیت یا خطا (200)
+
+- POST `/user/verify-otp`
+  - توضیح: تایید کد OTP
+  - Body: `{ phone: string, otp: string }`
+  - Response: پیام موفقیت یا خطا (200)
+
+- POST `/user/register`
+  - توضیح: ثبت‌نام کاربر
+  - Body: `{ first_name, last_name, phone, password, role }`
+  - Response: `{ message, user }` (201)
+
+- POST `/user/login`
+  - توضیح: ورود کاربر و دریافت JWT
+  - Body: `{ phone, password }`
+  - Response: `{ message, token }` (200)
+
+- POST `/user/show-appointments`
+  - توضیح: نمایش نوبت‌های کاربر
+  - اختیاری/نیازمند JWT: از `req.userId.userId` استفاده می‌شود
+  - Response: `{ message, appointments }` (200)
+
+- POST `/user/show-user`
+  - توضیح: نمایش اطلاعات کاربر (از توکن)
+  - نیازمند JWT: `req.userId.phone`
+  - Response: `{ message, user }` (200)
+
+- POST `/salon/show-all-salons`
+  - توضیح: بازگرداندن لیست سالن‌ها
+  - Body: none (در کنترلر فعلی از بدنه استفاده نمی‌شود)
+  - Response: لیست سالن‌ها
+
+- POST `/salon/show-salon-by-id`
+  - توضیح: گرفتن جزئیات سالن
+  - Body: `{ salon_id: string }`
+  - Response: شیء سالن
+
+- POST `/appointment/create-appointment`
+  - توضیح: ایجاد یک رزرو
+  - Middleware: `jwtMiddleware` (کاربر از توکن گرفته می‌شود)
+  - Body: `{ salon, service, shift_id, date, appointment_start_time, appointment_end_time, status }`
+  - Response: `{ message, appointment }` (201)
+
+- POST `/appointment/show-appointments`
+  - توضیح: نمایش نوبت‌های قابل رزرو یا موجود
+  - Middleware: `jwtMiddleware`
+  - Body: `{ salon, service, date }`
+  - Response: `{ appointments }` (200)
+
+---
+
+**مسیرهای Panel (مدیریتی)**
+
+پیش‌فرض این روت‌ها در `panelRouter` با پیشوند `/panel` استفاده می‌شوند (در `src/router/panel/index.rote.ts`).
+
+- POST `/panel/salon/create-salon`
+  - توضیح: ایجاد سالن جدید
+  - Middleware: `jwtMiddleware`, `upload.single("image")` (تصویر سالن الزامی)
+  - Body (form-data): `image` (فایل)، و فیلدها: `name`, `address`, `area`, `phone`, `rating`, `services_id` (JSON array رشته‌ها)
+  - از `req.userId.userId` به‌عنوان `owner` استفاده می‌شود
+  - Response: پیام موفقیت (201)
+
+- POST `/panel/salon/update-salon`
+  - توضیح: به‌روزرسانی سالن
+  - Middleware: `jwtMiddleware`, `upload.single("image")` (اختیاری)
+  - Body: `{ salonId, name?, address?, area?, phone?, rating?, services_id?, image (file) }`
+  - Response: پیام موفقیت (200)
+
+- POST `/panel/salon/add-shift`
+  - توضیح: افزودن شیفت / پرسنل برای سالن
+  - Middleware: `jwtMiddleware` (نیاز به نقش `admin` در کنترلر)
+  - Body: `{ salonId, staff_name, startTime, endTime, services_id, price, duration, exceptionDates }`
+    - `services_id` باید شناسه‌ی یک سرویس معتبر باشد
+    - `exceptionDates` باید رشتهٔ JSON یا آرایه‌ای از اشیا با فیلدهای `{ date, startTime, endTime, status }`
+  - Response: `{ message, newShift }` (201)
+
+- POST `/panel/salon/update-shift`
+  - توضیح: به‌روزرسانی شیفت
+  - Middleware: `jwtMiddleware` (نیاز به نقش `admin`)
+  - Body: `{ shiftId, staff_name?, startTime?, endTime?, services_id?, price?, duration?, exceptionDates?, status? }`
+  - Response: `{ message, result }` (200)
+
+- POST `/panel/salon/show-appointments`
+  - توضیح: نمایش نوبت‌های سالن
+  - Middleware: `jwtMiddleware` (نیاز به نقش `admin`)
+  - Body: `{ salonId, serviceId, date }`
+  - Response: لیست رزروها یا خطا (200)
+
+---
+
+**ارجاعات به فایل‌ها**
+- روت‌ها: `src/router/web` و `src/router/panel`
+- کنترلرها: `src/controller/web/*` و `src/controller/panel/*`
+- سرویس‌ها: `src/service/*` (مثلاً `salon.service.ts`, `user.service.ts`, `appointment .service.ts`)
+- میان‌افزارها: `src/midleware/jwt.midleware.ts`, `src/midleware/upload.midleware.ts`
+- کوئری‌ها/ریپازیتوری‌ها: `src/repositories/*`
+
+---
+
+نمونهٔ سریع درخواست (ایجاد سالن، `multipart/form-data`):
+
+POST /panel/salon/create-salon
+Headers:
+- `Authorization: Bearer <token>`
+Body (form-data):
+- `image`: فایل تصویر
+- `name`: "سالن نمونه"
+- `address`: "خیابان مثال"
+- `area`: "منطقه 1"
+- `phone`: "09120000000"
+- `rating`: 4.5
+- `services_id`: `["<serviceId1>", "<serviceId2>"]`
+
+نمونهٔ درخواست JSON (ایجاد نوبت):
+
+POST /appointment/create-appointment
+Headers:
+- `Authorization: Bearer <token>`
+Body (application/json):
+```
+{
+  "salon": "<salonId>",
+  "service": "<serviceId>",
+  "shift_id": "<shiftId>",
+  "date": "2025-12-30",
+  "appointment_start_time": "10:00",
+  "appointment_end_time": "10:30",
+  "status": "pending"
+}
+```
+
+---
+
+اگر مایلید، مرحلهٔ بعدی را اجرا کنم:
+- استخراج دقیق‌تر اسکیمای ورودی و نمونهٔ پاسخ (خواندن دقیق‌تر سرویس‌ها و مدل‌ها) — زمان‌بری متوسط
+- یا نوشتن همین فایل در شاخهٔ دیگری یا فرمت OpenAPI/Swagger (YAML/JSON)
+
+لطفاً انتخاب کنید کدام را ادامه دهم.
+# مستند API — پروژه online_reserve
+
+این فایل خلاصه‌ای از نقاط انتهایی (endpoints)، احراز هویت و مثال‌های درخواست/پاسخ برای پروژه است.
+
+**نسخه:** 1.0
+
+**توضیح کلی:** سرویس‌ها در پوشه‌های `router/web` و `router/panel` قرار دارند؛ مدل‌ها در `src/model` و میان‌افزارها در `src/midleware`.
+
+---
+
+**احراز هویت**:
+- از JWT استفاده می‌شود. میان‌افزار مربوطه: [src/midleware/jwt.midleware.ts](src/midleware/jwt.midleware.ts)
+- هدر معمول: `Authorization: Bearer <token>`
+
+**بارگذاری فایل**:
+- از میان‌افزار بارگذاری استفاده می‌شود: [src/midleware/upload.midleware.ts](src/midleware/upload.midleware.ts)
+- برای آپلود تصویر از `multipart/form-data` استفاده کنید.
+
+---
+
+**مسیرها (Web)**
+- GET `/api/salons` — دریافت لیست سالن‌ها
+  - Query: optional filters (area, rating)
+- GET `/api/salons/:id` — دریافت جزئیات یک سالن
+- POST `/api/salons` — ایجاد سالن جدید
+  - Body: `{ name, address, image, area, phone, owner, rating, services }`
+  - بررسی تکراری بودن شماره تلفن انجام می‌شود
+- PUT `/api/salons/:id` — به‌روزرسانی سالن
+- DELETE `/api/salons/:id` — حذف سالن
+
+- GET `/api/appointments` — دریافت نوبت‌ها
+  - Query params: `salonId`, `serviceId`, `date` (برای فیلتر بر اساس سالن/سرویس/تاریخ)
+- POST `/api/appointments` — ایجاد نوبت
+  - Body معمول: `{ salon, user, services, date, time, ... }`
+
+- POST `/api/users/register` — ثبت‌نام کاربر (اگر در پروژه موجود باشد)
+- POST `/api/users/login` — ورود و دریافت JWT
+
+**مسیرها (Panel / مدیریت)**
+- مسیرهای پنل در `router/panel` قرار دارند، به‌عنوان مثال: `/panel/salon` برای عملیات مدیریتی سالن‌ها.
+
+---
+
+**نمونه درخواست (ایجاد سالن)**
+
+POST /api/salons
+Headers:
+- `Content-Type: application/json`
+- `Authorization: Bearer <token>` (در صورت نیاز)
+
+Body:
+```
+{
+  "name": "سالن نمونه",
+  "address": "خیابان مثال",
+  "image": "/uploads/123.jpg",
+  "area": "منطقه 1",
+  "phone": "09120000000",
+  "owner": "60d5ec49f9...",
+  "rating": 4.5,
+  "services": [{"_id":"s1","name":"کوتاهی"}]
+}
+```
+
+نمونه پاسخ موفق:
+```
+{
+  "message": "سالن با موفقیت ایجاد شد",
+  "newSalon": { /* شیء سالن جدید */ }
+}
+```
+
+نمونه خطای تکراری بودن شماره تلفن: HTTP 400
+
+---
+
+**مدل‌ها و فایل‌های مرتبط**
+- [src/model/salon.model.ts](src/model/salon.model.ts)
+- [src/model/user.model.ts](src/model/user.model.ts)
+- [src/model/appointment .model.ts](src/model/appointment%20.model.ts)
+- کوئری‌ها/repositoryها در `src/repositories` (مثل `salon_query.ts` و `appointment .query.ts`)
+
+---
+
+نکات تکمیلی:
+- برای مستندسازی دقیق‌تر (تمام مسیرها، پارامترها و اسکیمای پاسخ) می‌توانم فایل را بر اساس محتوای `router/` به‌صورت خودکار استخراج کنم — آیا مایلید این کار را انجام دهم؟
+# مستند API — پروژه online_reserve
+
+این فایل خلاصه‌ای از نقاط انتهایی (endpoints)، احراز هویت و مثال‌های درخواست/پاسخ برای پروژه است.
+
+**نسخه:** 1.0
+
+**توضیح کلی:** سرویس‌ها در پوشه‌های `router/web` و `router/panel` قرار دارند؛ مدل‌ها در `src/model` و میان‌افزارها در `src/midleware`.
+
+---
+
+**احراز هویت**:
+- از JWT استفاده می‌شود. میان‌افزار مربوطه: [src/midleware/jwt.midleware.ts](src/midleware/jwt.midleware.ts)
+- هدر معمول: `Authorization: Bearer <token>`
+
+**بارگذاری فایل**:
+- از میان‌افزار بارگذاری استفاده می‌شود: [src/midleware/upload.midleware.ts](src/midleware/upload.midleware.ts)
+- برای آپلود تصویر از `multipart/form-data` استفاده کنید.
+
+---
+
+**مسیرها (Web)**
+- GET `/api/salons` — دریافت لیست سالن‌ها
+  - Query: optional filters (area, rating)
+- GET `/api/salons/:id` — دریافت جزئیات یک سالن
+- POST `/api/salons` — ایجاد سالن جدید
+  - Body: `{ name, address, image, area, phone, owner, rating, services }`
+  - بررسی تکراری بودن شماره تلفن انجام می‌شود
+- PUT `/api/salons/:id` — به‌روزرسانی سالن
+- DELETE `/api/salons/:id` — حذف سالن
+
+- GET `/api/appointments` — دریافت نوبت‌ها
+  - Query params: `salonId`, `serviceId`, `date` (برای فیلتر بر اساس سالن/سرویس/تاریخ)
+- POST `/api/appointments` — ایجاد نوبت
+  - Body معمول: `{ salon, user, services, date, time, ... }`
+
+- POST `/api/users/register` — ثبت‌نام کاربر (اگر در پروژه موجود باشد)
+- POST `/api/users/login` — ورود و دریافت JWT
+
+**مسیرها (Panel / مدیریت)**
+- مسیرهای پنل در `router/panel` قرار دارند، به‌عنوان مثال: `/panel/salon` برای عملیات مدیریتی سالن‌ها.
+
+---
+
+**نمونه درخواست (ایجاد سالن)**
+
+POST /api/salons
+Headers:
+- `Content-Type: application/json`
+- `Authorization: Bearer <token>` (در صورت نیاز)
+
+Body:
+```
+{
+  "name": "سالن نمونه",
+  "address": "خیابان مثال",
+  "image": "/uploads/123.jpg",
+  "area": "منطقه 1",
+  "phone": "09120000000",
+  "owner": "60d5ec49f9...",
+  "rating": 4.5,
+  "services": [{"_id":"s1","name":"کوتاهی"}]
+}
+```
+
+نمونه پاسخ موفق:
+```
+{
+  "message": "سالن با موفقیت ایجاد شد",
+  "newSalon": { /* شیء سالن جدید */ }
+}
+```
+
+نمونه خطای تکراری بودن شماره تلفن: HTTP 400
+
+---
+
+**مدل‌ها و فایل‌های مرتبط**
+- [src/model/salon.model.ts](src/model/salon.model.ts)
+- [src/model/user.model.ts](src/model/user.model.ts)
+- [src/model/appointment .model.ts](src/model/appointment%20.model.ts)
+- کوئری‌ها/repositoryها در `src/repositories` (مثل `salon_query.ts` و `appointment .query.ts`)
+
+---
+
+token Jwtباید=Bearer:token

@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.appointmentRouter = void 0;
+const express_1 = require("express");
+const appointment__controller_1 = require("../../controller/panel/appointment .controller");
+const jwt_midleware_1 = require("../../midleware/jwt.midleware");
+exports.appointmentRouter = (0, express_1.Router)();
+const appointmentController = new appointment__controller_1.AppointmentController();
+exports.appointmentRouter.post("/create-appointment", jwt_midleware_1.jwtMiddleware, appointmentController.createAppointment);
+exports.appointmentRouter.post("/show-appointments", jwt_midleware_1.jwtMiddleware, appointmentController.showAppointment);

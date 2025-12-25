@@ -6,3 +6,7 @@ const express_1 = require("express");
 const router = (0, express_1.Router)();
 exports.webRouter = router;
 router.use("/user", user_route_1.userRouter);
+const appointment_1 = require("./appointment");
+router.use("/appointment", appointment_1.appointmentRouter);
+const salon_1 = require("./salon");
+router.use("/salon", salon_1.salonRouter);

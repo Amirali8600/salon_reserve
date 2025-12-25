@@ -8,17 +8,21 @@ export class AppointmentController{
 
     createAppointment:RequestHandler = async (req:Request,res:Response,next:NextFunction) => {
         try{
-            const {salon, service, user, staff_id, date, appointment_start_time, appointment_end_time, status}=req.body;
-            const findappointment=await new AppointmentQuery().findOne({salon, service,staff_id,date,appointment_start_time,appointment_end_time});
-            if(findappointment){
-                const error:Error=new Error("این نوبت قبلا رزرو شده است");
-                error.statusCode=400;
-                throw error;
-            }
-            const newAppointment=await this.appointmentService.createAppointment({salon, service, user, staff_id, date, appointment_start_time, appointment_end_time, status});
+            const {salon, service, user, shift_id, date, appointment_start_time, appointment_end_time, status}=req.body;
+           
+            const newAppointment=await this.appointmentService.createAppointment({salon, service, user:req.userId.userId, shift_id, date, appointment_start_time, appointment_end_time, status});
             res.status(201).json({message:newAppointment.message,appointment:newAppointment.newAppointment});
         }   catch(error){
             next(error);
         }   
+    }
+    showAppointment:RequestHandler = async (req:Request,res:Response,next:NextFunction) => {
+        try{
+            const {salon,service,date}=req.body;
+            const appointments=await this.appointmentService.showUnbookedAppointments({salon,service,date});
+            res.status(200).json({appointments});
+        }   catch(error){
+            next(error);
+        }
     }
 }

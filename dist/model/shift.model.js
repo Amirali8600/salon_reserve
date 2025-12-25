@@ -36,15 +36,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Shift = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
 const ShiftSchema = new mongoose_1.default.Schema({
-    staff_id: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
+    staff_name: { type: String, required: true },
     salonId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Salon", required: true },
     startTime: { type: String, required: true },
     endTime: { type: String, required: true },
-    service: [{
-            service_id: { type: mongoose_1.Schema.Types.ObjectId, ref: "Service", required: true },
-            duration: { type: Number, required: true }, // in minutes
-            price: { type: Number, required: true },
-        }],
+    service: {
+        service_id: { type: String, required: true },
+        duration: { type: Number, required: true }, // in minutes
+        price: { type: Number, required: true },
+    },
     exceptionDates: [{
             date: { type: Date, required: true },
             startTime: { type: String, required: true },

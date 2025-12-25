@@ -9,5 +9,7 @@ userRouter.post("/verify-otp"
 ,userController.verifyOtp);
 userRouter.post("/register",userController.registerUser)
 userRouter.post("/login",userController.loginUser)
+userRouter.post("/show-appointments",userController.showUserAppointments);
+userRouter.post("/show-user",userController.ShowUser);
 
 export {userRouter};

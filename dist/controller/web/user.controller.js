@@ -76,6 +76,26 @@ class UserController {
                 next(error);
             }
         });
+        this.ShowUser = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { phone } = req.userId.phone;
+                const result = yield this.userService.userAccount(phone);
+                res.status(200).json({ message: result.message, user: result.user });
+            }
+            catch (error) {
+                next(error);
+            }
+        });
+        this.showUserAppointments = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { userId } = req.userId.userId;
+                const result = yield this.userService.showUserAppointments(userId);
+                res.status(200).json({ message: result.message, appointments: result.appointments });
+            }
+            catch (error) {
+                next(error);
+            }
+        });
     }
 }
 exports.UserController = UserController;

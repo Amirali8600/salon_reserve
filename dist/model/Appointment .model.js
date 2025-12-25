@@ -42,7 +42,7 @@ const Appointment_Schema = new mongoose_1.default.Schema({
     date: { type: Date, required: true },
     appointment_start_time: { type: String, required: true },
     appointment_end_time: { type: String, required: true },
-    staff_id: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
+    shiftid: { type: mongoose_1.Schema.Types.ObjectId, ref: "Shift", required: true },
     status: { type: String, required: true, default: "booked" }, // booked,completed,cancelled
 }, { timestamps: true });
-exports.Appointment = mongoose_1.default.model("papointment", Appointment_Schema);
+exports.Appointment = mongoose_1.default.model("Appointment", Appointment_Schema);

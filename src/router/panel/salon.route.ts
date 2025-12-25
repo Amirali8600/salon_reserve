@@ -6,3 +6,6 @@ export const salonRouter:Router=Router();
 const salonController:SalonController=new SalonController();
 salonRouter.post("/create-salon",jwtMiddleware,upload.single("image"),salonController.createSalon);
 salonRouter.post("/update-salon",jwtMiddleware,upload.single("image"),salonController.updateSalon);
+salonRouter.post("/add-shift",jwtMiddleware,salonController.addStaff);
+salonRouter.post("/update-shift",jwtMiddleware,salonController.updateStaffShift);
+salonRouter.post("/show-appointments",jwtMiddleware,salonController.ShowAppointments);

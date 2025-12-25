@@ -62,4 +62,22 @@ export class UserController{
             next(error);
         }
     }
+    ShowUser:RequestHandler = async (req:Request,res:Response,next:NextFunction) => {
+        try{
+            const {phone}=req.userId.phone;
+            const result=await this.userService.userAccount(phone);
+            res.status(200).json({message:result.message,user:result.user});
+        }catch(error){
+            next(error);
+        }
+    }
+    showUserAppointments:RequestHandler = async (req:Request,res:Response,next:NextFunction) => {
+        try{
+            const {userId}=req.userId.userId;
+            const result=await this.userService.showUserAppointments(userId);
+            res.status(200).json({message:result.message,appointments:result.appointments});
+        }catch(error){
+            next(error);
+        }
+    }
 }

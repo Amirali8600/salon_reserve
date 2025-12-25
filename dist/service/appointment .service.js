@@ -18,11 +18,17 @@ class AppointmentService {
     }
     createAppointment(data) {
         return __awaiter(this, void 0, void 0, function* () {
+            const findappointment = yield this.appointmentQuery.findOne({ date: data.date, appointment_start_time: data.appointment_start_time, appointment_end_time: data.appointment_end_time, shiftid: data.shift_id });
+            if (findappointment) {
+                const error = new Error("این نوبت قبلاً ثبت شده است");
+                error.statusCode = 400;
+                throw error;
+            }
             const newAppointment = yield this.appointmentQuery.create({
                 salon: data.salon,
                 service: data.service,
                 user: data.user,
-                staff_id: data.staff_id,
+                shiftid: data.shift_id,
                 date: data.date,
                 appointment_start_time: data.appointment_start_time,
                 appointment_end_time: data.appointment_end_time,
@@ -34,21 +40,31 @@ class AppointmentService {
     showUnbookedAppointments(data) {
         return __awaiter(this, void 0, void 0, function* () {
             const shiftQuery = new shift_query_1.ShiftQuery();
-            const shifts = shiftQuery.find({ salonId: data.salon, service: { $elemMatch: { service_id: data.service } } });
-            let unbookedAppointments = [{}];
+            const shifts = yield shiftQuery.find({ salonId: data.salon, "service.service_id": data.service });
+            console.log(shifts.toString());
+            let unbookedAppointments = [];
             if (shifts) {
                 let startTime;
                 let endTime;
                 for (let i = 0; i < shifts.length; i++) {
-                    const staffId = shifts[i].staff_id;
-                    if (shifts[i].exceptionDates > 0) {
+                    if (shifts[i].exceptionDates.length > 0) {
+                        console.log(1);
                         for (let j = 0; j < shifts[i].exceptionDates.length; j++) {
-                            if (shifts[i].exceptionDates[j].date == data.date && shifts[i].exceptionDates[j].status == "cancelled") {
-                                continue;
-                            }
-                            else if (shifts[i].exceptionDates[j].date == data.date && shifts[i].exceptionDates[j].status == "active") {
-                                startTime = shifts[i].exceptionDates[j].startTime;
-                                endTime = shifts[i].exceptionDates[j].endTime;
+                            console.log(data.date.toString(), shifts[i].exceptionDates[j].date);
+                            const converted_date = new Date(data.date);
+                            console.log();
+                            if (converted_date.toString() === shifts[i].exceptionDates[j].date.toString()) {
+                                console.log(2);
+                                // startTime=shifts[i].exceptionDates[j].startTime;
+                                // endTime=shifts[i].exceptionDates[j].endTime;
+                                if (shifts[i].exceptionDates[j].status == "active") {
+                                    startTime = shifts[i].exceptionDates[j].startTime;
+                                    endTime = shifts[i].exceptionDates[j].endTime;
+                                }
+                                else {
+                                    startTime = "00:00";
+                                    endTime = "00:00";
+                                }
                             }
                             else {
                                 startTime = shifts[i].startTime;
@@ -69,9 +85,10 @@ class AppointmentService {
                         endTime_formatted = endHour * 60 + endMinute;
                     };
                     format(startTime, endTime);
-                    const duration = shifts[i].service.find((s) => s.service_id.toString() === data.service.toString()).duration;
-                    const price = shifts[i].service.find((s) => s.service_id.toString() === data.service.toString()).price;
+                    const duration = shifts[i].service.duration;
+                    const price = shifts[i].service.price;
                     const duration_count = Math.floor((endTime_formatted - startTime_formatted) / duration);
+                    let unbookedSlots = [];
                     for (let k = 0; k < duration_count; k++) {
                         const slot_startTime = startTime_formatted + (k * duration);
                         const slot_endTime = slot_startTime + duration;
@@ -82,7 +99,7 @@ class AppointmentService {
                         const slot_startTime_formatted = `${slot_startTime_hour.toString().padStart(2, "0")}:${slot_startTime_minute.toString().padStart(2, "0")}`;
                         const slot_endTime_formatted = `${slot_endTime_hour.toString().padStart(2, "0")}:${slot_endTime_minute.toString().padStart(2, "0")}`;
                         const existingAppointment = yield this.appointmentQuery.findOne({
-                            staff_id: staffId,
+                            staff_name: shifts[i].staff_name,
                             date: data.date,
                             appointment_start_time: slot_startTime_formatted,
                             appointment_end_time: slot_endTime_formatted,
@@ -103,21 +120,19 @@ class AppointmentService {
                             status:string;
                          }]
                             */
-                            let un = [{
-                                    staff_id: staffId,
-                                    date: data.date,
-                                    price: price,
-                                    unbookedSlots: [
-                                        {
-                                            startTime: "21:00",
-                                            endTime: "22:00",
-                                        },
-                                    ],
-                                    status: "unbooked",
-                                }];
-                            unbookedAppointments.push(un);
+                            unbookedSlots.push({ startTime: slot_startTime_formatted, endTime: slot_endTime_formatted });
                         }
                     }
+                    unbookedAppointments.push({
+                        shift_id: shifts[i]._id,
+                        salon_id: shifts[i].salonId,
+                        service_id: shifts[i].service.service_id,
+                        staff_name: shifts[i].staff_name,
+                        date: data.date,
+                        price: price,
+                        unbookedSlots: unbookedSlots,
+                        status: "unbooked",
+                    });
                 }
                 return { unbookedAppointments };
             }
@@ -126,6 +141,10 @@ class AppointmentService {
                 error.statusCode = 404;
                 throw error;
             }
+        });
+    }
+    showBookedAppointments(data) {
+        return __awaiter(this, void 0, void 0, function* () {
         });
     }
 }

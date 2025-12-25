@@ -1,8 +1,12 @@
 import { SalonQuery } from "../repositories/salon_query";
 import { ISalon } from "../model/salon.model";
 import { Schema } from "mongoose";
+import { AppointmentQuery } from "../repositories/appointment .query";
+import { log } from "console";
 export class SalonService {
-    private salonQuery=new SalonQuery() 
+    private salonQuery=new SalonQuery()
+    private appointmentQuery=new AppointmentQuery();
+  
     async createSalon(data:{name:string; address:string; image:string; area:string; phone:string;  owner:Schema.Types.ObjectId; rating:number; services:{_id:string; name:string;}[]}):Promise<any>{
         const existingSalon=await this.salonQuery.findOne({phone:data.phone});
         if(existingSalon){
@@ -35,6 +39,11 @@ export class SalonService {
         }
         const updateResult = await this.salonQuery.update({_id:salonId},updateData);
         return {message: "سالن با موفقیت به روز رسانی شد", updateResult};
+    }
+    async ShowAppointments(data:{salonId:Schema.Types.ObjectId,serviceId:string,date:Date}):Promise<any>{
+        const findSalonAppointments=await this.appointmentQuery.find({salon:data.salonId,service:data.serviceId,date:data.date});
+        const find= findSalonAppointments.toString()
+        return {message:"لیست نوبت های  تاریخ ",findSalonAppointments};
     }
     deleteSalon(salonId:Schema.Types.ObjectId):Promise<any>{
         return this.salonQuery.delete({_id:salonId});

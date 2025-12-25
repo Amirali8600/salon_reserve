@@ -8,6 +8,7 @@ import { ShiftQuery } from "../../repositories/shift.query";
 import { log } from "console";
 export class SalonController{
     private salonService:SalonService=new SalonService();
+    
     createSalon:RequestHandler = async (req:Request,res:Response,next:NextFunction) => {
         try{
             // if(!req.userId.role){
@@ -24,7 +25,6 @@ export class SalonController{
             }
          const image=req.file.path;
             
-            const j='["item1", "item2", "item3"]';
             const {name, address, area, phone, rating, services_id}=req.body;
             const admin=req.userId.userId;
             const service_array=JSON.parse(services_id);
@@ -122,52 +122,65 @@ export class SalonController{
     }
     addStaff:RequestHandler = async (req:Request,res:Response,next:NextFunction) => {
         try{
-            if(req.user.role!=="admin"){
+            if(req.userId.role!=="admin"){
                 const error:Error=new Error("شما دسترسی لازم برای این عملیات را ندارید");
                 error.statusCode=403;
                 throw error;
             }
-            const {salonId,staff_id,startTime,
-endTime,service,exceptionDates
+            const {salonId,staff_name,startTime,
+endTime,services_id,price,duration,exceptionDates
             }=req.body;
-
+            console.log(req.body);
+            
             const findSalon=await this.salonService.getSalonById(salonId);
             if(!findSalon){
                 const error:Error=new Error("سالن مورد نظر یافت نشد");
                 error.statusCode=404;
                 throw error;
             }
-            let serviceDetails:[{service_id:Schema.Types.ObjectId; duration:number; price:number;}]
-            for(let i=0;i<service.length;i++){
-                const serviceRecord=await new ServiceQuery().findOne({_id:service[i].service_id});
-                if(!serviceRecord){
-                    const error:Error=new Error("خدمات انتخاب شده معتبر نیستند");
-                    error.statusCode=400;
-                    throw error;
-                }
-                serviceDetails.push({service_id:serviceRecord._id,duration:service[i].duration,price:service[i].price});
+            let service_info:{service_id:string,price:number,duration:number};
+            let service_id_tostring:string;
+            const findservice=await new ServiceQuery().findOne({_id:services_id});
+            if(!findservice){
+                const error:Error=new Error("خدمات انتخاب شده معتبر نیستند");
+                error.statusCode=400;
+                throw error
             }
-            let exceptionDates_details:[{date:Date; startTime:string; endTime:string; status:string;}] ;
-            for(let j=0;j<exceptionDates.length;j++){
-                if(exceptionDates[j].date<new Date()){
+            if(findSalon.services.findIndex(s=>s._id.toString()===services_id)===-1){
+                const error:Error=new Error("این خدمت در سالن ارائه نمی شود");
+                error.statusCode=400;
+                throw error;
+            }
+            service_id_tostring=findservice._id.toString();
+            service_info={service_id:service_id_tostring,price:price,duration:duration};
+            let exceptionDates_details:{date:Date; startTime:string; endTime:string; status:string;}[] = [];
+
+            if(exceptionDates){
+            let exceptionDates_array=JSON.parse(exceptionDates);
+            for(let j=0;j<exceptionDates_array.length;j++){
+                if(exceptionDates_array[j].date<new Date()){
                     const error:Error=new Error("تاریخ های استثنا نمی توانند در گذشته باشند");
                     error.statusCode=400;
                     throw error;
                 }
                 exceptionDates_details.push({
-                    date:exceptionDates[j].date,
-                    startTime:exceptionDates[j].startTime,
-                    endTime:exceptionDates[j].endTime,
-                    status:exceptionDates[j].status,
+                    date:(exceptionDates_array[j].date),
+                    startTime:(exceptionDates_array[j].startTime),
+                    endTime:(exceptionDates_array[j].endTime),
+                    status:(exceptionDates_array[j].status),
                 });
             }
+        }
+        else{
+            exceptionDates_details=[];
+        }
             const newShift=await new ShiftQuery().create({
-                staff_id,
+                staff_name,
                 salonId,
                 startTime,
                 endTime,
-                service:serviceDetails, 
-                exceptionDates:exceptionDates_details,
+                service:service_info, 
+                exceptionDates: exceptionDates_details as any,
                 status:"active",
             });
             if(!newShift){
@@ -175,12 +188,7 @@ endTime,service,exceptionDates
                 error.statusCode=500;
                 throw error;
             }
-            const changeUserRole=await new UserQuery().update({_id:staff_id},{role:"staff"});
-            if(!changeUserRole){
-                const error:Error=new Error("خطایی در به روز رسانی نقش کاربر رخ داده است");
-                error.statusCode=500;
-                throw error;
-            }
+         
             res.status(201).json({message:"شیفت با موفقیت ایجاد شد",newShift});
         }
         catch(error){
@@ -192,49 +200,67 @@ endTime,service,exceptionDates
 }
 updateStaffShift:RequestHandler = async (req:Request,res:Response,next:NextFunction) => {
     try{
-        if(req.user.role!=="admin"){
+        if(req.userId.role!=="admin"){
             const error:Error=new Error("شما دسترسی لازم برای این عملیات را ندارید");
             error.statusCode=403;
             throw error;
         }
-        const {shiftId,updateData}=req.body;
+        const {shiftId,staff_name,startTime,
+endTime,services_id,price,duration,exceptionDates,status}=req.body;
+            const updateData:Partial<{
+                staff_name?:string;
+                service?:{service_id:string; duration:number; price:number;};
+                startTime?:string;
+                endTime?:string;
+                exceptionDates?:{date:Date; startTime:string; endTime:string; status:string;}[];
+                status?:string;
+            }> = {};
+            if(staff_name) updateData.staff_name = staff_name;
+            if(startTime) updateData.startTime = startTime;
+            if(endTime) updateData.endTime = endTime;
+            if(services_id && price && duration){
+                const findservice=await new ServiceQuery().findOne({_id:services_id});
+                if(!findservice){
+                    const error:Error=new Error("خدمات انتخاب شده معتبر نیستند");
+                    error.statusCode=400;
+                    throw error
+                }
+                updateData.service={service_id:findservice._id.toString(),duration:duration,price:price};
+            }
+            if(status) updateData.status=req.body.status;
+        let exceptionDates_details:{date:Date; startTime:string; endTime:string; status:string;}[]=[] 
+            if(exceptionDates){
+               
+                    for(let j=0;j<exceptionDates.length;j++){
+                        if(exceptionDates[j].date<Date.now()){
+                            const error:Error=new Error("تاریخ های استثنا نمی توانند در گذشته باشند");
+                            error.statusCode=400;
+                            throw error}
+                            console.log("a");
+                            
+                        exceptionDates_details.push({
+                    date:exceptionDates[j].date,
+                    startTime:exceptionDates[j].startTime,
+                    endTime:exceptionDates[j].endTime,
+                    status:exceptionDates[j].status,
+                });
+  
+                
+
+
+            }
+        }
+            updateData.exceptionDates=exceptionDates_details;
+
         const findShift=await new ShiftQuery().findOne({_id:shiftId});
         if(!findShift){
             const error:Error=new Error("شیفت مورد نظر یافت نشد");  
             error.statusCode=404;
             throw error;
         }
-        let serviceDetails:[{service_id:Schema.Types.ObjectId; duration:number; price:number;}]
-        let exceptionDates_details:[{date:Date; startTime:Date; endTime:Date; status:string;}] ;
-        if(updateData.service)
-        {
-            for(let i=0;i<updateData.service.length;i++){
-                const serviceRecord=await new ServiceQuery().findOne({_id:updateData.service[i].service_id});
-                if(!serviceRecord){
-                    const error:Error=new Error("خدمات انتخاب شده معتبر نیستند");
-                    error.statusCode=400;
-                    throw error;
-                }
-                serviceDetails.push({service_id:serviceRecord._id,duration:updateData.service[i].duration,price:updateData.service[i].price});
-            }
-            updateData.service=serviceDetails;
-        }
-        if(updateData.exceptionDates){
-            for(let j=0;j<updateData.exceptionDates.length;j++){
-                if(updateData.exceptionDates[j].date<new Date()){
-                    const error:Error=new Error("تاریخ های استثنا نمی توانند در گذشته باشند");
-                    error.statusCode=400;
-                    throw error;
-                }
-                exceptionDates_details.push({
-                    date:updateData.exceptionDates[j].date,
-                    startTime:updateData.exceptionDates[j].startTime,
-                    endTime:updateData.exceptionDates[j].endTime,
-                    status:updateData.exceptionDates[j].status,
-                });
-            }
-            updateData.exceptionDates=exceptionDates_details;
-        }   
+
+       
+    
         //فرمت updatedate باید باشه {startTime:...,endTime:...,service:[{
 //     service_id:..., duration:..., price:...
         // }],exceptionDates:[{date:..., startTime:..., endTime:..., status:...}]} 
@@ -244,20 +270,38 @@ updateStaffShift:RequestHandler = async (req:Request,res:Response,next:NextFunct
             error.statusCode=404;
             throw error;
         }
-        if(updateData.staff_id!==findShift.staff_id){
-            const changeOldStaffRole=await new UserQuery().update({_id:findShift.staff_id},{role:"user"});
-            const changeNewStaffRole=await new UserQuery().update({_id:updateData.staff_id},{role:"staff"});
-            if(!changeOldStaffRole || !changeNewStaffRole){
-                const error:Error=new Error("خطایی در به روز رسانی نقش کاربر رخ داده است");
-                error.statusCode=500;
-                throw error;
-            }
-        }
+       
         res.status(200).json({message:"شیفت با موفقیت به روز رسانی شد", result} );
     }catch(error){
+        console.log(error);
+        
         next(error);
     }
 
 }
+ShowAppointments:RequestHandler = async (req:Request,res:Response,next:NextFunction) => {    try {
+        if(req.userId.role!=="admin"){
+            const error:Error=new Error("شما دسترسی لازم برای این عملیات را ندارید");
+            error.statusCode=403;
+            throw error;
+        }
+        const {salonId,serviceId,date}=req.body;
+        const result=await this.salonService.ShowAppointments({salonId,serviceId,date});
+        if(!result){
+            const error:Error=new Error("خطایی در نمایش رزروها رخ داده است");
+            error.statusCode=500;
+            throw error;
+        }
+        if(result.length===0){
+            const error:Error=new Error("رزروی یافت نشد");
+            error.statusCode=404;
+            throw error;
+        }
+        res.status(200).json(result);
+    } catch (error) {
+        next(error);
+    }
+}
 
 }
+

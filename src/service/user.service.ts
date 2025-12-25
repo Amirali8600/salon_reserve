@@ -3,7 +3,9 @@ import { Otp ,IOtp} from "../model/otp.model";
 import bcrypt from "bcrypt";
 import { OtpQuery } from "../repositories/otp.query";
 import jwt from "jsonwebtoken";
+import { AppointmentQuery } from "../repositories/appointment .query";
 export class UserService{
+    private AppointmentQuery:AppointmentQuery=new AppointmentQuery();
     private userQuery:UserQuery=new UserQuery();
     async registerUser(data:{first_name:string;last_name:string;phone:string;hash_password:string;role?:string}):Promise<any>{
         const existingUser=await this.userQuery.findbyPhone(data.phone);
@@ -51,5 +53,23 @@ throw error;
                 const token=jwt.sign({userId:existingUser._id,phone:existingUser.phone,role:existingUser.role},process.env.JWT_SECRET as string,{expiresIn:"1y"});
                 return {message: "ورود با موفقیت انجام شد", token};
         }
+    }
+    async userAccount(phone:string):Promise<any>{
+        const user=await this.userQuery.findbyPhone(phone);
+        if(!user){
+            const error:Error=new Error("کاربری با این شماره تلفن یافت نشد");
+            error.statusCode=404;
+            throw error;
+        }
+        return {user};
+    }
+    async showUserAppointments(userId:string):Promise<any>{
+        const appointments=await this.AppointmentQuery.find({userId:userId,status:"booked"});
+        if(!appointments){
+            const error:Error=new Error("هیچ رزروی یافت نشد");
+            error.statusCode=404;
+            throw error;
+        }
+        return {appointments};
     }
     }

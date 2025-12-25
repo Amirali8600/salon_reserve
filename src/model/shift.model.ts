@@ -1,13 +1,13 @@
 import mongoose,{Schema} from "mongoose";
 export interface IShift {
     _id?: Schema.Types.ObjectId;
-    staff_id: Schema.Types.ObjectId;
+    staff_name: string;
     salonId: Schema.Types.ObjectId;
-    service:[{
-        service_id:Schema.Types.ObjectId;
+    service:{
+        service_id:string;
         duration:number; // in minutes
         price:number;
-    }];
+    };
     startTime: string;
     endTime: string;
     exceptionDates:[{
@@ -19,21 +19,20 @@ export interface IShift {
     status: string; // active, cancelled,
 }
 const ShiftSchema=new mongoose.Schema<IShift>({
-    staff_id:{type:Schema.Types.ObjectId,ref:"User",required:true},
+    staff_name:{type:String,required:true},
     salonId:{type:Schema.Types.ObjectId,ref:"Salon",required:true},
     startTime:{type:String,required:true},
     endTime:{type:String,required:true},
-    service:[{
-        service_id:{type:Schema.Types.ObjectId,ref:"Service",required:true},
+    service:{
+        service_id:{type:String,required:true},
         duration:{type:Number,required:true}, // in minutes
         price:{type:Number,required:true},
-    }],
+    },
 
     exceptionDates:[{   
         date:{type:Date,required:true},
         startTime:{type:String,required:true},
         endTime:{type:String,required:true},
-        
         status:{type:String,required:true,default:"active"}, // cancelled,active
     }],
     status:{type:String,required:true,default:"active"}, // active, cancelled,

@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.salonRouter = void 0;
+const express_1 = require("express");
+const salon_controller_1 = require("../../controller/web/salon.controller");
+const salonRouter = (0, express_1.Router)();
+exports.salonRouter = salonRouter;
+const webSalonService = new salon_controller_1.WebSalonService();
+salonRouter.post("/show-all-salons", webSalonService.GetAllsalon);
+salonRouter.post("/show-salon-by-id", webSalonService.GetSalonById);
