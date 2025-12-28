@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ownerRouter = void 0;
+const express_1 = require("express");
+const owner_controller_1 = require("../../controller/panel/owner.controller");
+const jwt_midleware_1 = require("../../midleware/jwt.midleware");
+exports.ownerRouter = (0, express_1.Router)();
+const ownerCtrl = new owner_controller_1.ownercontroller();
+exports.ownerRouter.post("/addservice", jwt_midleware_1.jwtMiddleware, ownerCtrl.addservice);
+exports.ownerRouter.post("/getusers", jwt_midleware_1.jwtMiddleware, ownerCtrl.getusers);
+exports.ownerRouter.post("/getsalons", jwt_midleware_1.jwtMiddleware, ownerCtrl.getsalons);
+exports.ownerRouter.post("/getservices", jwt_midleware_1.jwtMiddleware, ownerCtrl.getservices);
+exports.ownerRouter.post("/changeUserRole", jwt_midleware_1.jwtMiddleware, ownerCtrl.changeUserRole);

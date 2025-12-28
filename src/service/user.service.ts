@@ -72,4 +72,9 @@ throw error;
         }
         return {appointments};
     }
+    async getAllUsers():Promise<any>{
+        const users=await this.userQuery.find({});
+        return {users};
+    }
+    
     }

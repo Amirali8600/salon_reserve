@@ -93,5 +93,11 @@ class UserService {
             return { appointments };
         });
     }
+    getAllUsers() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const users = yield this.userQuery.find({});
+            return { users };
+        });
+    }
 }
 exports.UserService = UserService;
